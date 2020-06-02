@@ -12,12 +12,17 @@ namespace PantallaMain.DATOS
     class sqlPlaylist
     {
         MySqlConnection conexion = new MySqlConnection("server=jayt.zapto.org; port=3307; userid=jayt2; password=Admin1234; database=jayt; ");
+
+        /// <summary>
+        /// Insertar playlist
+        /// </summary>
+        /// <param name="play"></param>
         public void InsertarCanciones(playlist play)
         {
             
-            string insertar = "INSERT INTO playlist (usuario,idCanciones,totalCaniones) VALUES (" +
+            string insertar = "INSERT INTO playlist (usuario,idCanciones) VALUES (" +
                 '"' + play.getUsuario() + '"' + "," +
-                '"' +" " + play.getIdCanciones() +" "+'"' + ",1);";
+                '"' +" " + play.getIdCanciones() +" "+'"' + ");";
             try
             {
                 conexion.Open();
@@ -33,6 +38,11 @@ namespace PantallaMain.DATOS
                
             }
         }
+        /// <summary>
+        /// Seleccionamos idCanciones 
+        /// </summary>
+        /// <param name="play"></param>
+        /// <returns></returns>
         public string primeraVez(playlist play)
         {
 
@@ -43,6 +53,11 @@ namespace PantallaMain.DATOS
                 MySqlCommand comand = new MySqlCommand(insertar, conexion);
                 string nombre = (string)comand.ExecuteScalar();
                 Console.WriteLine(nombre);
+                if (nombre == null)
+                {
+                    conexion.Close();
+                    return "";
+                }
                 conexion.Close();
                 return nombre;
 
@@ -55,8 +70,9 @@ namespace PantallaMain.DATOS
 
             }
         }
+
         /// <summary>
-        /// 
+        /// Actualizamos idCanciones
         /// </summary>
         /// <param name="play"></param>
         /// <returns></returns>
@@ -81,9 +97,14 @@ namespace PantallaMain.DATOS
 
             }
         }
-        /*public string actualizarPlaylist(playlist play)
+        /// <summary>
+        /// Actualizamos idCanciones y lo devolvemos
+        /// </summary>
+        /// <param name="play"></param>
+        /// <returns></returns>
+        public string actualizarPlaylist2(playlist play)
         {
-            string actualizar = "UPDATE playlist SET idCanciones= CONCAT(idCanciones, '" + " " + play.getIdCanciones() + " " + "') where usuario = '" + play.getUsuario() + "';";
+            string actualizar = "UPDATE playlist SET idCanciones= '"+play.getIdCanciones()+"' where usuario = '" + play.getUsuario() + "';";
             try
             {
                 conexion.Open();
@@ -101,7 +122,33 @@ namespace PantallaMain.DATOS
                 return null;
 
             }
-        }*/
+        }
+        /// <summary>
+        /// Eliminamos cancion de idCanciones
+        /// </summary>
+        /// <param name="play"></param>
+        /// <returns></returns>
+        public bool eliminarPlaylist(playlist play)
+        {
+            string actualizar = "UPDATE playlist SET idCanciones =  '"+ play.getIdCanciones() +"' where usuario = '" + play.getUsuario() + "';";
+            try
+            {
+                conexion.Open();
+                MySqlCommand comand = new MySqlCommand(actualizar, conexion);
+                string playlist = (string)comand.ExecuteScalar();
+                Console.WriteLine(playlist);
+                return true;
+
+
+            }
+            catch (MySqlException excepcion)
+            {
+                MessageBox.Show(excepcion.ToString());
+                MessageBox.Show("No funciona Insertado");
+                return false;
+
+            }
+        }
 
 
 

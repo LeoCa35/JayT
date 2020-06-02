@@ -1,4 +1,5 @@
-﻿using Microsoft.Build.BuildEngine;
+﻿using CryptSharp;
+using Microsoft.Build.BuildEngine;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Crypto.Tls;
 using PantallaMain.MODELO;
@@ -14,23 +15,36 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Security.Cryptography;
+
 namespace PantallaMain
 {
+    /// <summary>
+    /// Insertamos clientes a la base de datos
+    /// </summary>
     class sqlClientes
     {
+
         MySqlConnection conexion = new MySqlConnection("server=jayt.zapto.org; port=3307; userid=jayt2; password=Admin1234; database=jayt; ");
         byte[] imagenes;
+        /// <summary>
+        /// Insertamos los datos del usuario en nuestra base datos
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
         public bool InsertarClientes(cliente cli)
         {
+            string passEncriptado = Crypter.Phpass.Crypt(cli.getPassword());
            
             string insertar = "INSERT INTO clientes (usuario,password,email) VALUES (" +
                 '"' + cli.getUsuario() + '"' + "," +
-                '"' + cli.getPassword() + '"' + "," +
+                '"' + passEncriptado + '"' + "," +
                 '"' + cli.getEmail() + '"' + ");";
             try
             {
                 conexion.Open();
                 MySqlCommand comand = new MySqlCommand(insertar, conexion);
+                //Ejecucion comando
                 comand.ExecuteNonQuery();
 
                 conexion.Close();
@@ -45,6 +59,7 @@ namespace PantallaMain
 
 
         }
+        //Validamos si el usuario existe
         public bool validarUsuario(cliente cli)
         {
             
@@ -53,25 +68,32 @@ namespace PantallaMain
             {
                 conexion.Open();
                 MySqlCommand comand = new MySqlCommand(validar, conexion);
+                //Ejecutamos comando
                 comand.ExecuteNonQuery();
 
                 conexion.Close();
                 return true;
-                //MessageBox.Show("Insertado");
+                
 
             }
             catch (MySqlException excepcion)
             {
+                conexion.Close();
                 MessageBox.Show(excepcion.ToString());
                 MessageBox.Show("No funciona el validado");
                 return false;
             }
 
         }
+        /// <summary>
+        /// Buscamos si el password coincide con el usuario
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
         public bool buscarPorUsuario(cliente cli)
         {
            
-
+            
             cliente client = new cliente(cli.getUsuario(), cli.getPassword());
 
             try
@@ -83,9 +105,11 @@ namespace PantallaMain
                 Console.WriteLine(cli.getPassword());
 
                 string contraseña = (string)comando.ExecuteScalar();
+                bool matches = Crypter.CheckPassword(cli.getPassword(), contraseña);
                 Console.WriteLine("Ejecucion query correcta");
                 Console.WriteLine(contraseña);
-                if (contraseña.Equals(cli.getPassword()))
+                //Si la contraseña es igual al resultado de la sentencia que nos devuelve
+                if (matches/*contraseña.Equals(cli.getPassword())*/)
                 {
 
                     Console.WriteLine(contraseña);
@@ -107,9 +131,45 @@ namespace PantallaMain
             }
 
         }
-        public bool actualizarPassword(cliente cli)
+        /// <summary>
+        /// Funcion que devuelve un boolean si devuelve la contraseña de ese usuario
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
+        public bool seleccionPassword(cliente cli)
         {
-            string update = "UPDATE clientes SET password = '" + cli.getEmail() + "' WHERE usuario = '" + cli.getUsuario() + "' AND password = '" + cli.getPassword() + "';";
+            string seleccion = "SELECT password FROM clientes WHERE usuario = '" + cli.getUsuario() + "' ;";
+            try
+            {
+                conexion.Open();
+                MySqlCommand comand = new MySqlCommand(seleccion, conexion);
+                string contraseña = (string)comand.ExecuteScalar();
+                bool matches = Crypter.CheckPassword(cli.getPassword(), contraseña);
+                while (matches)
+                {
+                    conexion.Close();
+                    return true;
+                }
+            }
+            catch
+            {
+                conexion.Close();
+                return false;
+            }
+            conexion.Close();
+            return false;
+        }
+
+
+        /// <summary>
+        /// Actualizamos el password
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
+        public void actualizarPassword(cliente cli)
+        {
+            string passEncriptado = Crypter.Phpass.Crypt(cli.getPassword());
+            string update = "UPDATE clientes SET password = '" + passEncriptado + "' WHERE usuario = '"+ cli.getUsuario() + "' ;";
             try
             {
                 conexion.Open();
@@ -117,29 +177,37 @@ namespace PantallaMain
                 comand.ExecuteNonQuery();
 
                 conexion.Close();
-                return true;
+                
                 //MessageBox.Show("Insertado");
 
             }
             catch (MySqlException excepcion)
             {
+                conexion.Close();
                 MessageBox.Show(excepcion.ToString());
                 MessageBox.Show("No funciona el Actualizar");
-                return false;
+                
             }
         }
+        /// <summary>
+        /// Actualizamos la imagen de perfil
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
         public bool actualizarImagen(cliente cli)
         {
 
             string update = "UPDATE clientes SET imagen = @imagen WHERE usuario = '" + cli.getUsuario() + "';";
-            //string insertar = "INSERT INTO clientes (usuario,password,email,imagen) VALUES ('l','l','l', "+cli.getImagen() +" )"
+            
             try
             {
                 conexion.Open();
                 
                 MySqlCommand comand = new MySqlCommand("UPDATE clientes SET imagen = @imagen WHERE usuario = '" + cli.getUsuario() + "'", conexion);
+                //Añadimos parametros a nuestra imagen
                 comand.Parameters.AddWithValue("imagen", cli.getImagen());
                 comand.ExecuteNonQuery();
+                conexion.Close();
                 return true;
 
 
@@ -152,6 +220,11 @@ namespace PantallaMain
                 return false;
             }
         }
+        /// <summary>
+        /// Devolvemos la imagen
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
         public byte[] imagen(cliente cli)
         {
 
@@ -184,6 +257,11 @@ namespace PantallaMain
             }
             return imagenes;
         }
+        /// <summary>
+        /// Revisamos si existe la imagen en la base de datos
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <returns></returns>
         public bool revisionImagen(cliente cli)
         {
             string consultaSql = "SELECT imagen FROM clientes WHERE usuario = '"+cli.getUsuario()+"'  AND imagen IS NOT NULL";

@@ -20,7 +20,11 @@ namespace PantallaMain.DATOS
 		byte[] imagenes;
 		MySqlConnection conexion = new MySqlConnection("server=jayt.zapto.org; port=3307; userid=jayt2; password=Admin1234; database=jayt; ");
 		string nombre, artista, genero;
-		
+		/// <summary>
+		/// Devolvemos array el cual tienen nuestras canciones 
+		/// </summary>
+		/// <param name="nombreTabla"></param>
+		/// <returns></returns>
 		public List<cancion> guardarEnTabla(string nombreTabla)
 		{
 			guardarCanciones = new List<cancion>();
@@ -32,9 +36,11 @@ namespace PantallaMain.DATOS
 				conexion.Open();
 				MySqlCommand comand = new MySqlCommand(consultaSql, conexion);
 				MySqlDataReader comando = comand.ExecuteReader();
+				//Si hay contenido en la sentencia
 				while(comando.Read())
 				{
-					canciones = new cancion((int)comando[0],string.Format("{0}",comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[4]));
+					//Cogemos contenido y lo guardamos en el objecto cancion
+					canciones = new cancion((int)comando[0],string.Format("{0}",comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[3]));
 					guardarCanciones.Add(canciones);
 					Console.WriteLine(string.Format("{0}", comando[1]));
 				}
@@ -46,6 +52,11 @@ namespace PantallaMain.DATOS
 			Console.WriteLine(guardarCanciones.ToString());
 			return guardarCanciones;
 		}
+		/// <summary>
+		/// Devolvemos imagenes
+		/// </summary>
+		/// <param name="nombreCancion"></param>
+		/// <returns></returns>
 		public byte[] imagen(string nombreCancion)
 		{
 			
@@ -60,7 +71,7 @@ namespace PantallaMain.DATOS
 				
 				DataTable table = new DataTable();
 
-
+				//Si hay contenido en la base de datos
 				if (comando.Read())
 				{
 					imagenes = (byte[])comando["imagen"];
@@ -77,6 +88,12 @@ namespace PantallaMain.DATOS
 			}
 			return imagenes;
 		}
+
+		/// <summary>
+		/// Buscamos por el nombre de la cancion y devolvemos array con el resultado
+		/// </summary>
+		/// <param name="cn"></param>
+		/// <returns></returns>
 		public List<cancion> buscarPorNombre(cancion cn)
 		{
 			
@@ -93,7 +110,7 @@ namespace PantallaMain.DATOS
 					artista = comando.GetString("artista");
 					genero = comando.GetString("genero");
 
-					guardarCanciones.Add(new cancion((int)comando[0], string.Format("{0}", comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[4])));
+					guardarCanciones.Add(new cancion((int)comando[0], string.Format("{0}", comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[3])));
 				}
 				conexion.Close();
 				comando.Close();
@@ -105,6 +122,12 @@ namespace PantallaMain.DATOS
 			}
 			return guardarCanciones;
 		}
+
+		/// <summary>
+		/// Buscamos por genero de cancion y devolvemos array
+		/// </summary>
+		/// <param name="cn"></param>
+		/// <returns></returns>
 		public List<cancion> buscarPorGenero(cancion cn)
 		{
 			
@@ -121,7 +144,46 @@ namespace PantallaMain.DATOS
 					artista = comando.GetString("artista");
 					genero = comando.GetString("genero");
 
-					guardarCanciones.Add(new cancion((int)comando[0], string.Format("{0}", comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[4])));
+					guardarCanciones.Add(new cancion((int)comando[0], string.Format("{0}", comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[3])));
+				}
+				conexion.Close();
+				comando.Close();
+			}
+
+			catch (Exception ex)
+			{
+				Console.WriteLine("Esto falla " + ex);
+			}
+			return guardarCanciones;
+		}
+		/// <summary>
+		/// Devolvemos una array de los resultados de la idCancion de ese usuario
+		/// </summary>
+		/// <param name="cn"></param>
+		/// <returns></returns>
+		public List<cancion> conseguirPlaylist(cancion cn)
+		{
+
+			string consultaSql = "SELECT * FROM cancion WHERE idCancion = " + cn.getNombre() + ";";/*cn.getNombre() equivale al idCancion*/
+			guardarCanciones = new List<cancion>();
+			try
+			{
+				conexion.Open();
+				MySqlCommand comand = new MySqlCommand(consultaSql, conexion);
+				MySqlDataReader comando = comand.ExecuteReader();
+				while (comando.Read())
+				{
+					nombre = comando.GetString("nombre");
+					artista = comando.GetString("artista");
+					genero = comando.GetString("genero");
+					if (comando.Equals(""))
+					{
+						Console.WriteLine("Por aqui no paso");
+					}
+					else 
+					{ 
+					guardarCanciones.Add(new cancion((int)comando[0], string.Format("{0}", comando[1]), string.Format("{0}", comando[2]), string.Format("{0}", comando[3])));
+					}
 				}
 				conexion.Close();
 				comando.Close();
@@ -134,6 +196,11 @@ namespace PantallaMain.DATOS
 			return guardarCanciones;
 		}
 
+		/// <summary>
+		/// Guardamos un string de idCanion
+		/// </summary>
+		/// <param name="cn"></param>
+		/// <returns></returns>
 		public string conseguirIdCancion(cancion cn)
 		{
 			string consultaSql = "SELECT idCancion FROM cancion WHERE nombre LIKE '" + cn.getNombre() + "';";
@@ -147,7 +214,6 @@ namespace PantallaMain.DATOS
 				Console.WriteLine(nombre);
 
 				return nombre;
-				//nombre = comando.GetString("idCancion");
 			}
 			catch(Exception ex)
 			{

@@ -13,7 +13,7 @@ namespace PantallaMain.MODELO
         string email;
         string password;
         byte[] imagen;
-        //internal static string getCliente;
+        
 
 
         //CONSTRUCTOR
